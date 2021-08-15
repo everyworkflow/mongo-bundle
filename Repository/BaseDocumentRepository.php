@@ -100,7 +100,7 @@ class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepos
             throw new \Exception('Unique Field Missing');
         } else if (is_array($field)) {
             foreach ($field as $key) {
-                if (!isset($documentData[$key])) {
+                if ('_id' !== $key && !isset($documentData[$key])) {
                     throw new \Exception('Unique Field Missing');
                 }
             }
@@ -113,7 +113,8 @@ class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepos
             $documentData[$this->getDocumentClass()::KEY_CREATED_AT] = Carbon::now()->toDateTimeString();
         }
 
-        if ($this->isConstExists($this->getDocumentClass(), 'KEY_UPDATED_AT') &&
+        if (
+            $this->isConstExists($this->getDocumentClass(), 'KEY_UPDATED_AT') &&
             !isset($documentData[$this->getDocumentClass()::KEY_UPDATED_AT])
         ) {
             $documentData[$this->getDocumentClass()::KEY_UPDATED_AT] = Carbon::now()->toDateTimeString();
@@ -129,8 +130,13 @@ class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepos
         $options = array_merge(['upsert' => true], $otherOptions);
 
         if ('_id' === $field || in_array('_id', $field, true)) {
+            if (!isset($documentData['_id'])) {
+                return $this->getCollection()->insertOne($documentData);
+            }
+
             $uuid = $documentData['_id'];
             unset($documentData['_id']);
+
             return $this->getCollection()
                 ->updateOne(['_id' => new \MongoDB\BSON\ObjectId($uuid)], ['$set' => $documentData], $options);
         }
