@@ -1,0 +1,34 @@
+{
+    "name": "everyworkflow/mongo-bundle",
+    "description": "Mongo bundle for every workflow project.",
+    "type": "package",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "EveryWorkflow",
+            "email": "everyworkflow@gmail.com"
+        }
+    ],
+    "require": {
+        "ext-mongodb": "*",
+        "mongodb/mongodb": "^1.9",
+        "symfony/console": "5.4.*",
+        "nesbot/carbon": "^2.43",
+        "everyworkflow/core-bundle": "dev-main"
+    },
+    "autoload": {
+        "psr-4": {
+            "EveryWorkflow\\MongoBundle\\": "./"
+        },
+        "exclude-from-classmap": [
+            "Resources",
+            "Tests"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "EveryWorkflow\\MongoBundle\\Tests\\": "Tests/"
+        }
+    },
+    "minimum-stability": "dev"
+}
