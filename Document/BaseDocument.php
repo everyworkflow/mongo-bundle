@@ -34,7 +34,7 @@ class BaseDocument implements BaseDocumentInterface
             return $uuid;
         }
         if ($uuid instanceof \MongoDB\BSON\ObjectId) {
-            return (string) $uuid;
+            return (string)$uuid;
         }
 
         return null;
@@ -46,7 +46,11 @@ class BaseDocument implements BaseDocumentInterface
         if (isset($arrayData['_id'])) {
             $arrayData['_id'] = $this->getId();
         }
-
+        foreach ($arrayData as $key => $val) {
+            if ($val instanceof DataObjectInterface) {
+                $arrayData[$key] = $val->toArray();
+            }
+        }
         return $arrayData;
     }
 
