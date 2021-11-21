@@ -9,6 +9,7 @@ declare(strict_types=1);
 namespace EveryWorkflow\MongoBundle\DependencyInjection;
 
 use EveryWorkflow\MongoBundle\Support\MigrationInterface;
+use EveryWorkflow\MongoBundle\Support\SeederInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
@@ -27,5 +28,8 @@ class MongoExtension extends Extension
 
         $container->registerForAutoconfiguration(MigrationInterface::class)
             ->addTag('everyworkflow.migration');
+
+        $container->registerForAutoconfiguration(SeederInterface::class)
+        ->addTag('everyworkflow.seeder');
     }
 }

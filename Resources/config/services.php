@@ -9,6 +9,7 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 use EveryWorkflow\MongoBundle\Command\MongoDatabaseDropCommand;
 use EveryWorkflow\MongoBundle\Model\MigrationList;
 use EveryWorkflow\MongoBundle\Model\MongoConnection;
+use EveryWorkflow\MongoBundle\Model\SeederList;
 
 return function (ContainerConfigurator $configurator) {
     $services = $configurator->services()
@@ -25,6 +26,9 @@ return function (ContainerConfigurator $configurator) {
 
     $services->set(MigrationList::class)
         ->arg('$migrations', tagged_iterator('everyworkflow.migration'));
+
+    $services->set(SeederList::class)
+        ->arg('$seeders', tagged_iterator('everyworkflow.seeder'));
 
     $services->set(MongoDatabaseDropCommand::class)
         ->arg('$mongoDb', '%env(MONGO_DB)%');
