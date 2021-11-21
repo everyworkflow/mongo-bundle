@@ -12,7 +12,7 @@ use EveryWorkflow\MongoBundle\Document\MigrationDocumentInterface;
 
 interface MigrationRepositoryInterface extends BaseRepositoryInterface
 {
-    public function mapMigration(array $data): MigrationDocumentInterface;
+    public function mapDocument(array $data): MigrationDocumentInterface;
 
     /**
      * @return MigrationDocumentInterface[]
@@ -23,5 +23,5 @@ interface MigrationRepositoryInterface extends BaseRepositoryInterface
      * @param MigrationDocumentInterface[]
      * @return \MongoDB\InsertManyResult
      */
-    public function insertMany(array $migrations): \MongoDB\InsertManyResult;
+    public function insertMany(array $items): \MongoDB\InsertManyResult;
 }

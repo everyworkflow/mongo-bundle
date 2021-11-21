@@ -15,5 +15,5 @@ interface MigrationListInterface
     /**
      * @return MigrationInterface[]
      */
-    public function getSortedMigrations(): array;
+    public function getSortedList(): array;
 }

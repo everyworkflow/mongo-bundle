@@ -25,7 +25,7 @@ class MigrationList implements MigrationListInterface
     /**
      * @return MigrationInterface[]
      */
-    public function getSortedMigrations(): array
+    public function getSortedList(): array
     {
         $sortedMigrationNames = [];
 
@@ -35,11 +35,7 @@ class MigrationList implements MigrationListInterface
                 $class = get_class($migration);
                 $classNameArr = explode('\\', $class);
                 $fileName = $classNameArr[count($classNameArr) - 1];
-                if (isset($sortedMigrations[$fileName])) {
-                    $sortedMigrationNames[$fileName][] = $class;
-                } else {
-                    $sortedMigrationNames[$fileName][] = $class;
-                }
+                $sortedMigrationNames[$fileName][] = $class;
                 $migrations[$class] = $migration;
             }
         }
@@ -49,10 +45,10 @@ class MigrationList implements MigrationListInterface
         $sortedMigrations = [];
         foreach ($sortedMigrationNames as $fileName => $classes) {
             foreach ($classes as $class) {
-                $sortedMigrations[] = $migrations[$class];
+                $sortedMigrations[$class] = $migrations[$class];
             }
         }
 
-        return array_values($sortedMigrations);
+        return $sortedMigrations;
     }
 }

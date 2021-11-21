@@ -33,7 +33,7 @@ interface MigrationDocumentInterface extends ArrayableInterface
 
     public function getClass(): string;
 
-    public function setMigrateAt(CarbonInterface $migratedAt): self;
+    public function setMigratedAt(CarbonInterface $migratedAt): self;
 
     public function getMigratedAt(): ?CarbonInterface;
 }

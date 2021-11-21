@@ -8,17 +8,21 @@ declare(strict_types=1);
 
 namespace EveryWorkflow\MongoBundle\Command;
 
-use EveryWorkflow\MongoBundle\Model\MigrationListInterface;
-use EveryWorkflow\MongoBundle\Support\MigrationInterface;
 use EveryWorkflow\MongoBundle\Factory\DocumentFactoryInterface;
+use EveryWorkflow\MongoBundle\Model\MigrationListInterface;
 use EveryWorkflow\MongoBundle\Repository\MigrationRepositoryInterface;
+use EveryWorkflow\MongoBundle\Support\MigrationInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 class MongoMigrationRollbackCommand extends Command
 {
+    public const KEY_STEP = 'step';
+    public const KEY_CLASS = 'class';
+
     protected static $defaultName = 'mongo:migration:rollback';
 
     protected MigrationListInterface $migrationList;
@@ -42,15 +46,13 @@ class MongoMigrationRollbackCommand extends Command
      */
     protected function configure()
     {
-        $this->setDescription('Rollback last mongo migration')
-            ->setHelp('This command will rollback last migration');
+        $this->setDescription('Rollback mongo migration')
+            ->setHelp('This command will rollback migration')
+            ->addOption(self::KEY_STEP, 's', InputOption::VALUE_REQUIRED, 'Rollback step', 1)
+            ->addOption(self::KEY_CLASS, 'c', InputOption::VALUE_REQUIRED, 'Rollback class');
     }
 
     /**
-     * @param InputInterface $input
-     * @param OutputInterface $output
-     * @return int
-     *
      * @SuppressWarnings(PHPMD.ShortVariable)
      * @SuppressWarnings(PHPMD.LongVariable)
      */
@@ -60,22 +62,38 @@ class MongoMigrationRollbackCommand extends Command
 
         $inputOutput->title('Mongo migration rollback');
 
-        $sortedMigrations = $this->migrationList->getSortedMigrations();
+        $sortedMigrations = $this->migrationList->getSortedList();
         if (!count($sortedMigrations)) {
             $inputOutput->warning('No migration found!');
+
             return Command::FAILURE;
         }
 
-        $migrationDocumentCollection = $this->migrationRepository->find(
-            [],
-            [
-                'limit' => 1,
-                'sort' => [
-                    'migrated_at' => -1,
-                    '_id' => -1,
+        $step = (int) $input->getOption(self::KEY_STEP) ?? 1;
+        $class = $input->getOption(self::KEY_CLASS) ?? false;
+
+        if ($class && !empty($class)) {
+            $migrationDocumentCollection = $this->migrationRepository->find(
+                [
+                    'class' => $class,
                 ],
-            ]
-        );
+                [
+                    'limit' => 1,
+                ]
+            );
+        } else {
+            $migrationDocumentCollection = $this->migrationRepository->find(
+                [],
+                [
+                    'limit' => $step,
+                    'sort' => [
+                        'migrated_at' => -1,
+                        '_id' => -1,
+                    ],
+                ]
+            );
+        }
+
         $actionableMigrationClass = [];
         foreach ($migrationDocumentCollection as $migrationDocument) {
             if (isset($sortedMigrations[$migrationDocument->getClass()])) {
@@ -95,7 +113,7 @@ class MongoMigrationRollbackCommand extends Command
             $inputOutput->newLine();
             $result = $this->migrationRepository->getCollection()
                 ->deleteMany(['class' => ['$in' => $actionableMigrationClass]]);
-            $inputOutput->success($result->getDeletedCount() . ' migration rollbacked.');
+            $inputOutput->success($result->getDeletedCount().' migration rollbacked.');
 
             return Command::SUCCESS;
         }
@@ -106,20 +124,17 @@ class MongoMigrationRollbackCommand extends Command
     }
 
     /**
-     * @param SymfonyStyle $inputOutput
-     * @param MigrationInterface $migration
-     * @return string
      * @throws \Exception
      */
     protected function rollbackMigration(
         SymfonyStyle $inputOutput,
         MigrationInterface $migration
     ): string {
-
         $class = get_class($migration);
-        $inputOutput->text('- Running rollback ' . $class);
+        $inputOutput->text('- Running rollback '.$class);
 
         $migration->rollback();
+
         return $class;
     }
 }

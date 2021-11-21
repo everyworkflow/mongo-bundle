@@ -25,8 +25,8 @@ class MongoMigrateCommand extends Command
     protected static $defaultName = 'mongo:migrate';
 
     protected MigrationListInterface $migrationList;
-    protected MigrationRepositoryInterface $migrationRepository;
     protected DocumentFactoryInterface $documentFactory;
+    protected MigrationRepositoryInterface $migrationRepository;
 
     public function __construct(
         MigrationListInterface $migrationList,
@@ -36,8 +36,8 @@ class MongoMigrateCommand extends Command
     ) {
         parent::__construct($name);
         $this->migrationList = $migrationList;
-        $this->migrationRepository = $migrationRepository;
         $this->documentFactory = $documentFactory;
+        $this->migrationRepository = $migrationRepository;
     }
 
     /**
@@ -60,7 +60,7 @@ class MongoMigrateCommand extends Command
 
         $inputOutput->title('EveryWorkflow Data Migrate');
 
-        $sortedMigrations = $this->migrationList->getSortedMigrations();
+        $sortedMigrations = $this->migrationList->getSortedList();
         if (!count($sortedMigrations)) {
             $inputOutput->warning('No migration found!');
             return Command::FAILURE;
@@ -146,6 +146,6 @@ class MongoMigrateCommand extends Command
         return $migrationDocument
             ->setBundleName(implode('_', $bundleNameArray))
             ->setFileName($classNameArray[count($classNameArray) - 1])
-            ->setMigrateAt(Carbon::now());
+            ->setMigratedAt(Carbon::now());
     }
 }

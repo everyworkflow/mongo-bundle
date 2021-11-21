@@ -88,7 +88,7 @@ class MigrationDocument implements MigrationDocumentInterface
      * @EWFDataTypes (type="datetime", mongofield=CreatedUpdatedHelperTraitInterface::KEY_MIGRATED_AT, required=TRUE)
      * @return $this
      */
-    public function setMigrateAt(CarbonInterface $migratedAt): self
+    public function setMigratedAt(CarbonInterface $migratedAt): self
     {
         $this->dataObject->setData(self::KEY_MIGRATED_AT, $migratedAt->toDateTimeString());
         return $this;
