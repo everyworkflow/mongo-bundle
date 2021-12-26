@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 namespace EveryWorkflow\MongoBundle\Document;
 
-use Carbon\CarbonInterface;
+use DateTime;
 use EveryWorkflow\CoreBundle\Support\ArrayableInterface;
 
 interface MigrationDocumentInterface extends ArrayableInterface
@@ -33,7 +33,7 @@ interface MigrationDocumentInterface extends ArrayableInterface
 
     public function getClass(): string;
 
-    public function setMigratedAt(CarbonInterface $migratedAt): self;
+    public function setMigratedAt(DateTime|string $migratedAt): self;
 
-    public function getMigratedAt(): ?CarbonInterface;
+    public function getMigratedAt(): ?DateTime;
 }

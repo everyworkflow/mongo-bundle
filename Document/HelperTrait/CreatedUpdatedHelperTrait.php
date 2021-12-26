@@ -6,46 +6,50 @@
 
 namespace EveryWorkflow\MongoBundle\Document\HelperTrait;
 
-use Carbon\Carbon;
-use Carbon\CarbonInterface;
-use EveryWorkflow\CoreBundle\Annotation\EWFDataTypes;
+use DateTime;
+use EveryWorkflow\CoreBundle\Validation\Type\DateTimeValidation;
 
 trait CreatedUpdatedHelperTrait
 {
-    /**
-     * @EWFDataTypes (type="datetime", mongofield=CreatedUpdatedHelperTraitInterface::KEY_CREATED_AT, required=TRUE)
-     */
-    public function setCreatedAt(CarbonInterface $createdAt): self
+    #[DateTimeValidation(required: true)]
+    public function setCreatedAt(DateTime|string $createdAt): self
     {
-        $this->dataObject->setData(CreatedUpdatedHelperTraitInterface::KEY_CREATED_AT, $createdAt->toDateTimeString());
+        if ($createdAt instanceof DateTime) {
+            $createdAt = $createdAt->format(DateTime::ISO8601);
+        }
+        $this->dataObject->setData(CreatedUpdatedHelperTraitInterface::KEY_CREATED_AT, $createdAt);
+
         return $this;
     }
 
-    public function getCreatedAt(): ?CarbonInterface
+    public function getCreatedAt(): ?DateTime
     {
         $createdAt = $this->dataObject->getData(CreatedUpdatedHelperTraitInterface::KEY_CREATED_AT);
         if ($createdAt) {
-            return Carbon::make($createdAt);
+            return new DateTime($createdAt);
         }
+
         return null;
     }
 
-    /**
-     * @param CarbonInterface $createdAt
-     * @EWFDataTypes (type="datetime", mongofield=CreatedUpdatedHelperTraitInterface::KEY_UPDATED_AT, required=TRUE)
-     */
-    public function setUpdatedAt(CarbonInterface $updatedAt): CreatedUpdatedHelperTraitInterface
+    #[DateTimeValidation(required: true)]
+    public function setUpdatedAt(DateTime|string $updatedAt): self
     {
-        $this->dataObject->setData(CreatedUpdatedHelperTraitInterface::KEY_UPDATED_AT, $updatedAt->toDateTimeString());
+        if ($updatedAt instanceof DateTime) {
+            $updatedAt = $updatedAt->format(DateTime::ISO8601);
+        }
+        $this->dataObject->setData(CreatedUpdatedHelperTraitInterface::KEY_UPDATED_AT, $updatedAt);
+
         return $this;
     }
 
-    public function getUpdatedAt(): ?CarbonInterface
+    public function getUpdatedAt(): ?DateTime
     {
         $updatedAt = $this->dataObject->getData(CreatedUpdatedHelperTraitInterface::KEY_UPDATED_AT);
         if ($updatedAt) {
-            return Carbon::make($updatedAt);
+            return new DateTime($updatedAt);
         }
+
         return null;
     }
 }

@@ -17,9 +17,9 @@ interface BaseRepositoryInterface
 
     public function getCollection(): Collection;
 
-    public function getIndexNames(): array;
+    public function getPrimaryKey(): string|array;
 
-    public function setIndexNames(array $indexNames): self;
+    public function setPrimaryKey(string|array $primaryKeys): self;
 
     public function getCollectionName(): string;
 

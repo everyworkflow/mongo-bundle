@@ -11,9 +11,9 @@
     ],
     "require": {
         "ext-mongodb": "*",
-        "mongodb/mongodb": "^1.9",
-        "symfony/console": "5.4.*",
-        "nesbot/carbon": "^2.43",
+        "mongodb/mongodb": "^1.10",
+        "symfony/console": "6.0.*",
+        "nesbot/carbon": "^2.55",
         "everyworkflow/core-bundle": "dev-main"
     },
     "autoload": {

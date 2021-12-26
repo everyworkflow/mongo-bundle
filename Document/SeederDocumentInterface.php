@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 namespace EveryWorkflow\MongoBundle\Document;
 
-use Carbon\CarbonInterface;
+use DateTime;
 use EveryWorkflow\CoreBundle\Support\ArrayableInterface;
 
 interface SeederDocumentInterface extends ArrayableInterface
@@ -33,7 +33,7 @@ interface SeederDocumentInterface extends ArrayableInterface
 
     public function getClass(): string;
 
-    public function setSeededAt(CarbonInterface $seededAt): self;
+    public function setSeededAt(DateTime|string $seededAt): self;
 
-    public function getSeededAt(): ?CarbonInterface;
+    public function getSeededAt(): ?DateTime;
 }

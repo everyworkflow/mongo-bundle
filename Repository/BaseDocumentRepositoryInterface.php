@@ -8,35 +8,66 @@ declare(strict_types=1);
 
 namespace EveryWorkflow\MongoBundle\Repository;
 
+use EveryWorkflow\CoreBundle\Exception\ValidatorException;
 use EveryWorkflow\CoreBundle\Support\ArrayableInterface;
 use EveryWorkflow\MongoBundle\Document\BaseDocumentInterface;
-use EveryWorkflow\MongoBundle\Factory\DocumentFactoryInterface;
-use MongoDB\InsertOneResult;
-use MongoDB\UpdateResult;
+use EveryWorkflow\MongoBundle\Exception\PrimaryKeyMissingException;
+use EveryWorkflow\MongoBundle\Support\Attribute\RepositoryAttribute;
 
 interface BaseDocumentRepositoryInterface extends BaseRepositoryInterface
 {
-    public function getDocumentFactory(): DocumentFactoryInterface;
+    public function getRepositoryAttribute(): ?RepositoryAttribute;
 
-    public function getNewDocument(array $data = []): BaseDocumentInterface;
+    public function getPrimaryKey(): string|array;
 
-    public function saveByField(
-        string|null|array  $field,
-        ArrayableInterface $document,
-        array              $otherFilter = [],
-        array              $otherOptions = []
-    ): UpdateResult|InsertOneResult;
+    public function getIndexKeys(): array;
+
+    public function setDocumentClass(string $documentClass): self;
+
+    public function getDocumentClass(): ?string;
+    
+    public function create(array $data = []): BaseDocumentInterface;
 
     public function deleteByFilter(array $filter = []): object|array|null;
 
     /**
+     * @throws PrimaryKeyMissingException
+     * @throws ValidatorException
      * @throws \Exception
      */
-    public function save(
+    public function saveOne(
         ArrayableInterface $document,
-        array              $otherFilter = [],
-        array              $otherOptions = []
-    ): UpdateResult|InsertOneResult;
+        array $otherFilter = [],
+        array $otherOptions = []
+    ): BaseDocumentInterface;
+
+    /**
+     * @throws PrimaryKeyMissingException
+     * @throws ValidatorException
+     */
+    public function insertOne(ArrayableInterface $document): BaseDocumentInterface;
+
+    /**
+     * @throws PrimaryKeyMissingException
+     * @throws ValidatorException
+     * @throws \Exception
+     */
+    public function updateOne(
+        ArrayableInterface $document,
+        array $otherFilter = [],
+        array $otherOptions = []
+    ): BaseDocumentInterface;
+
+    /**
+     * @throws PrimaryKeyMissingException
+     * @throws ValidatorException
+     * @throws \Exception
+     */
+    public function replaceOne(
+        ArrayableInterface $document,
+        array $otherFilter = [],
+        array $otherOptions = []
+    ): BaseDocumentInterface;
 
     /**
      * @return BaseDocumentInterface[]
@@ -53,5 +84,5 @@ interface BaseDocumentRepositoryInterface extends BaseRepositoryInterface
     /**
      * @throws \Exception
      */
-    public function findById(string $uuid): BaseDocumentInterface;
+    public function findById(string | \MongoDB\BSON\ObjectId $uuid): BaseDocumentInterface;
 }

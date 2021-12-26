@@ -19,9 +19,9 @@ class BaseRepository implements BaseRepositoryInterface
     protected string $collectionName = '';
 
     /**
-     * index name must be defined.
+     * Primary keys must be defined.
      */
-    protected array $indexNames = ['_id'];
+    protected string|array $primaryKey = '';
 
     protected MongoConnectionInterface $mongoConnection;
 
@@ -37,17 +37,19 @@ class BaseRepository implements BaseRepositoryInterface
 
     public function getCollection(): Collection
     {
-        return $this->getConnection()->getDatabase()->selectCollection($this->collectionName);
+        return $this->getConnection()
+            ->getDatabase()
+            ->selectCollection($this->getCollectionName());
     }
 
-    public function getIndexNames(): array
+    public function getPrimaryKey(): string|array
     {
-        return $this->indexNames;
+        return $this->primaryKey;
     }
 
-    public function setIndexNames(array $indexNames): self
+    public function setPrimaryKey(string|array $primaryKey): self
     {
-        $this->indexNames = $indexNames;
+        $this->primaryKey = $primaryKey;
         return $this;
     }
 

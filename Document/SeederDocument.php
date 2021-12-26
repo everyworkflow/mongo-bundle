@@ -8,9 +8,10 @@ declare(strict_types=1);
 
 namespace EveryWorkflow\MongoBundle\Document;
 
-use Carbon\Carbon;
-use Carbon\CarbonInterface;
+use DateTime;
 use EveryWorkflow\CoreBundle\Model\DataObjectInterface;
+use EveryWorkflow\CoreBundle\Validation\Type\DateTimeValidation;
+use EveryWorkflow\CoreBundle\Validation\Type\StringValidation;
 
 class SeederDocument implements SeederDocumentInterface
 {
@@ -34,11 +35,7 @@ class SeederDocument implements SeederDocumentInterface
         return null;
     }
 
-    /**
-     * @param string $bundleName
-     * @return $this
-     * @EWFDataTypes (type="string", mongofield=self::KEY_BUNDLE_NAME, required=TRUE)
-     */
+    #[StringValidation(required: true)]
     public function setBundleName(string $bundleName): self
     {
         $this->dataObject->setData(self::KEY_BUNDLE_NAME, $bundleName);
@@ -50,11 +47,7 @@ class SeederDocument implements SeederDocumentInterface
         return $this->dataObject->getData(self::KEY_BUNDLE_NAME);
     }
 
-    /**
-     * @param string $fileName
-     * @return $this
-     * @EWFDataTypes (type="string", mongofield=self::KEY_FILE_NAME, required=TRUE)
-     */
+    #[StringValidation(required: true)]
     public function setFileName(string $fileName): self
     {
         $this->dataObject->setData(self::KEY_FILE_NAME, $fileName);
@@ -66,11 +59,7 @@ class SeederDocument implements SeederDocumentInterface
         return $this->dataObject->getData(self::KEY_FILE_NAME);
     }
 
-    /**
-     * @param string $class
-     * @return $this
-     * @EWFDataTypes (type="string", mongofield=self::KEY_CLASS, required=TRUE)
-     */
+    #[StringValidation(required: true)]
     public function setClass(string $class): self
     {
         $this->dataObject->setData(self::KEY_CLASS, $class);
@@ -82,23 +71,24 @@ class SeederDocument implements SeederDocumentInterface
         return $this->dataObject->getData(self::KEY_CLASS);
     }
 
-    /**
-     * @param CarbonInterface $seededAt
-     * @EWFDataTypes (type="datetime", mongofield=CreatedUpdatedHelperTraitInterface::KEY_SEEDED_AT, required=TRUE)
-     * @return $this
-     */
-    public function setSeededAt(CarbonInterface $seededAt): self
+    #[DateTimeValidation(required: true)]
+    public function setSeededAt(DateTime|string $seededAt): self
     {
-        $this->dataObject->setData(self::KEY_SEEDED_AT, $seededAt->toDateTimeString());
+        if ($seededAt instanceof DateTime) {
+            $seededAt = $seededAt->format(DateTime::ISO8601);
+        }
+        $this->dataObject->setData(self::KEY_SEEDED_AT, $seededAt);
+
         return $this;
     }
 
-    public function getSeededAt(): ?CarbonInterface
+    public function getSeededAt(): ?DateTime
     {
         $seededAt = $this->dataObject->getData(self::KEY_SEEDED_AT);
         if ($seededAt) {
-            return Carbon::make($seededAt);
+            return new DateTime($seededAt);
         }
+
         return null;
     }
 

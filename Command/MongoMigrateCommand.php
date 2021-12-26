@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 namespace EveryWorkflow\MongoBundle\Command;
 
-use Carbon\Carbon;
+use EveryWorkflow\CoreBundle\Model\SystemDateTimeInterface;
 use EveryWorkflow\MongoBundle\Document\MigrationDocument;
 use EveryWorkflow\MongoBundle\Document\MigrationDocumentInterface;
 use EveryWorkflow\MongoBundle\Model\MigrationListInterface;
@@ -27,17 +27,20 @@ class MongoMigrateCommand extends Command
     protected MigrationListInterface $migrationList;
     protected DocumentFactoryInterface $documentFactory;
     protected MigrationRepositoryInterface $migrationRepository;
+    protected SystemDateTimeInterface $systemDateTime;
 
     public function __construct(
         MigrationListInterface $migrationList,
         DocumentFactoryInterface $documentFactory,
         MigrationRepositoryInterface $migrationRepository,
+        SystemDateTimeInterface $systemDateTime,
         string $name = null
     ) {
         parent::__construct($name);
         $this->migrationList = $migrationList;
         $this->documentFactory = $documentFactory;
         $this->migrationRepository = $migrationRepository;
+        $this->systemDateTime = $systemDateTime;
     }
 
     /**
@@ -118,10 +121,12 @@ class MongoMigrateCommand extends Command
         try {
             $migrationStatus = $migration->migrate();
         } catch (\Exception $e) {
+            $inputOutput->error($e->getMessage());
+            $inputOutput->text('- Rolling back migration ' . $class);
             try {
                 $migration->rollback();
             } catch (\Exception $e) {
-                // ignore if rollback fails while migrations
+                $inputOutput->error($e->getMessage());
             }
             $migrationStatus = false;
         }
@@ -146,6 +151,6 @@ class MongoMigrateCommand extends Command
         return $migrationDocument
             ->setBundleName(implode('_', $bundleNameArray))
             ->setFileName($classNameArray[count($classNameArray) - 1])
-            ->setMigratedAt(Carbon::now());
+            ->setMigratedAt($this->systemDateTime->now());
     }
 }

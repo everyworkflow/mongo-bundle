@@ -8,10 +8,10 @@ declare(strict_types=1);
 
 namespace EveryWorkflow\MongoBundle\Document;
 
-use Carbon\Carbon;
-use Carbon\CarbonInterface;
-use EveryWorkflow\CoreBundle\Annotation\EWFDataTypes;
+use DateTime;
 use EveryWorkflow\CoreBundle\Model\DataObjectInterface;
+use EveryWorkflow\CoreBundle\Validation\Type\DateTimeValidation;
+use EveryWorkflow\CoreBundle\Validation\Type\StringValidation;
 
 class MigrationDocument implements MigrationDocumentInterface
 {
@@ -35,11 +35,7 @@ class MigrationDocument implements MigrationDocumentInterface
         return null;
     }
 
-    /**
-     * @param string $bundleName
-     * @return $this
-     * @EWFDataTypes (type="string", mongofield=self::KEY_BUNDLE_NAME, required=TRUE)
-     */
+    #[StringValidation(required: true)]
     public function setBundleName(string $bundleName): self
     {
         $this->dataObject->setData(self::KEY_BUNDLE_NAME, $bundleName);
@@ -51,11 +47,7 @@ class MigrationDocument implements MigrationDocumentInterface
         return $this->dataObject->getData(self::KEY_BUNDLE_NAME);
     }
 
-    /**
-     * @param string $fileName
-     * @return $this
-     * @EWFDataTypes (type="string", mongofield=self::KEY_FILE_NAME, required=TRUE)
-     */
+    #[StringValidation(required: true)]
     public function setFileName(string $fileName): self
     {
         $this->dataObject->setData(self::KEY_FILE_NAME, $fileName);
@@ -67,11 +59,7 @@ class MigrationDocument implements MigrationDocumentInterface
         return $this->dataObject->getData(self::KEY_FILE_NAME);
     }
 
-    /**
-     * @param string $class
-     * @return $this
-     * @EWFDataTypes (type="string", mongofield=self::KEY_CLASS, required=TRUE)
-     */
+    #[StringValidation(required: true)]
     public function setClass(string $class): self
     {
         $this->dataObject->setData(self::KEY_CLASS, $class);
@@ -83,23 +71,24 @@ class MigrationDocument implements MigrationDocumentInterface
         return $this->dataObject->getData(self::KEY_CLASS);
     }
 
-    /**
-     * @param CarbonInterface $migratedAt
-     * @EWFDataTypes (type="datetime", mongofield=CreatedUpdatedHelperTraitInterface::KEY_MIGRATED_AT, required=TRUE)
-     * @return $this
-     */
-    public function setMigratedAt(CarbonInterface $migratedAt): self
+    #[DateTimeValidation(required: true)]
+    public function setMigratedAt(DateTime|string $migratedAt): self
     {
-        $this->dataObject->setData(self::KEY_MIGRATED_AT, $migratedAt->toDateTimeString());
+        if ($migratedAt instanceof DateTime) {
+            $migratedAt = $migratedAt->format(DateTime::ISO8601);
+        }
+        $this->dataObject->setData(self::KEY_MIGRATED_AT, $migratedAt);
+        
         return $this;
     }
 
-    public function getMigratedAt(): ?CarbonInterface
+    public function getMigratedAt(): ?DateTime
     {
         $migratedAt = $this->dataObject->getData(self::KEY_MIGRATED_AT);
         if ($migratedAt) {
-            return Carbon::make($migratedAt);
+            return new DateTime($migratedAt);
         }
+
         return null;
     }
 

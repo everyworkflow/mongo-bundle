@@ -6,13 +6,11 @@
 
 namespace EveryWorkflow\MongoBundle\Document\HelperTrait;
 
-use EveryWorkflow\CoreBundle\Annotation\EWFDataTypes;
+use EveryWorkflow\CoreBundle\Validation\Type\StringValidation;
 
 trait StatusHelperTrait
 {
-    /**
-     * @EWFDataTypes (type="string", mongofield=StatusHelperTraitInterface::KEY_STATUS, required=TRUE)
-     */
+    #[StringValidation(default: 'disable')]
     public function setStatus(string $status): self
     {
         $this->dataObject->setData(StatusHelperTraitInterface::KEY_STATUS, $status);

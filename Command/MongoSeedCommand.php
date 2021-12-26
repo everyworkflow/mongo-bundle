@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 namespace EveryWorkflow\MongoBundle\Command;
 
-use Carbon\Carbon;
+use EveryWorkflow\CoreBundle\Model\SystemDateTimeInterface;
 use EveryWorkflow\MongoBundle\Document\SeederDocument;
 use EveryWorkflow\MongoBundle\Document\SeederDocumentInterface;
 use EveryWorkflow\MongoBundle\Factory\DocumentFactoryInterface;
@@ -27,17 +27,20 @@ class MongoSeedCommand extends Command
     protected SeederListInterface $seederList;
     protected DocumentFactoryInterface $documentFactory;
     protected SeederRepositoryInterface $seederRepository;
+    protected SystemDateTimeInterface $systemDateTime;
 
     public function __construct(
         SeederListInterface $seederList,
         DocumentFactoryInterface $documentFactory,
         SeederRepositoryInterface $seederRepository,
+        SystemDateTimeInterface $systemDateTime,
         string $name = null
     ) {
         parent::__construct($name);
         $this->seederList = $seederList;
         $this->documentFactory = $documentFactory;
         $this->seederRepository = $seederRepository;
+        $this->systemDateTime = $systemDateTime;
     }
 
     /**
@@ -118,10 +121,12 @@ class MongoSeedCommand extends Command
         try {
             $seederStatus = $seeder->seed();
         } catch (\Exception $e) {
+            $inputOutput->error($e->getMessage());
+            $inputOutput->text('- Rolling back seeder ' . $class);
             try {
                 $seeder->rollback();
             } catch (\Exception $e) {
-                // ignore if rollback fails while seeding
+                $inputOutput->error($e->getMessage());
             }
             $seederStatus = false;
         }
@@ -146,6 +151,6 @@ class MongoSeedCommand extends Command
         return $seederDocument
             ->setBundleName(implode('_', $bundleNameArray))
             ->setFileName($classNameArray[count($classNameArray) - 1])
-            ->setSeededAt(Carbon::now());
+            ->setSeededAt($this->systemDateTime->now());
     }
 }
