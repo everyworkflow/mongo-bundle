@@ -104,6 +104,12 @@ class RepositoryAttribute
 
     public function getEventPrefix(): string
     {
-        return $this->eventPrefix;
+        if ($this->eventPrefix) {
+            return $this->eventPrefix;
+        }
+
+        $collectionName = $this->getCollectionName();
+        $collectionName = str_replace('_collection', '', $collectionName);
+        return $collectionName . '_';
     }
 }

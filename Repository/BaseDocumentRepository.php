@@ -20,7 +20,9 @@ use EveryWorkflow\MongoBundle\Factory\DocumentFactoryInterface;
 use EveryWorkflow\MongoBundle\Model\MongoConnectionInterface;
 use EveryWorkflow\MongoBundle\Support\Attribute\RepositoryAttribute;
 use MongoDB\Model\BSONDocument;
+use MongoDB\UpdateResult;
 use ReflectionClass;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * BaseDocumentRepository constructor.
@@ -28,6 +30,7 @@ use ReflectionClass;
 class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepositoryInterface
 {
     protected array $indexKeys = [];
+    protected string $eventPrefix = '';
     protected ?string $documentClass = null;
     protected ?RepositoryAttribute $repositoryAttribute = null;
 
@@ -35,6 +38,7 @@ class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepos
     protected CoreHelperInterface $coreHelper;
     protected SystemDateTimeInterface $systemDateTime;
     protected ValidatorFactoryInterface $validatorFactory;
+    protected EventDispatcherInterface $eventDispatcher;
 
     /**
      * BaseDocumentRepository constructor.
@@ -44,13 +48,15 @@ class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepos
         DocumentFactoryInterface $documentFactory,
         CoreHelperInterface $coreHelper,
         SystemDateTimeInterface $systemDateTime,
-        ValidatorFactoryInterface $validatorFactory
+        ValidatorFactoryInterface $validatorFactory,
+        EventDispatcherInterface $eventDispatcher
     ) {
         parent::__construct($mongoConnection);
         $this->documentFactory = $documentFactory;
         $this->coreHelper = $coreHelper;
         $this->systemDateTime = $systemDateTime;
         $this->validatorFactory = $validatorFactory;
+        $this->eventDispatcher = $eventDispatcher;
     }
 
     public function getRepositoryAttribute(): ?RepositoryAttribute
@@ -94,6 +100,15 @@ class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepos
         return $this->indexKeys;
     }
 
+    public function getEventPrefix(): string
+    {
+        if (empty($this->eventPrefix) && $this->getRepositoryAttribute()) {
+            $this->eventPrefix = $this->getRepositoryAttribute()->getEventPrefix();
+        }
+
+        return $this->eventPrefix;
+    }
+
     public function getCollectionName(): string
     {
         if (empty($this->collectionName) && $this->getRepositoryAttribute()) {
@@ -124,9 +139,14 @@ class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepos
         return $this->documentFactory->create($this->getDocumentClass(), $data);
     }
 
-    public function deleteByFilter(array $filter = []): object|array|null
+    public function deleteOneByFilter(array $filter = []): object|array|null
     {
         return $this->getCollection()->findOneAndDelete($filter);
+    }
+
+    public function deleteByFilter(array $filter = []): object|array|null
+    {
+        return $this->getCollection()->deleteMany($filter);
     }
 
     /**
@@ -139,24 +159,35 @@ class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepos
         array $otherFilter = [],
         array $otherOptions = []
     ): BaseDocumentInterface {
+        $this->eventDispatcher->dispatch(
+            $document,
+            $this->getEventPrefix() . '_save_one_before'
+        );
         $validData = $this->getValidDocumentData($document);
         $filter = $this->getDocumentFilter($document, $validData, $otherFilter);
         if (empty($filter)) {
-            return $this->insertOne($document, $otherOptions);
-        }
-        
-        $options = array_merge(['upsert' => true], $otherOptions);
-        $result = $this->getCollection()->updateOne($filter, ['$set' => $validData], $options);
+            $result = $this->getCollection()->insertOne($validData);
+            $validData['_id'] = $result->getInsertedId();
+        } else {
+            $options = array_merge(['upsert' => true], $otherOptions);
+            $result = $this->getCollection()->updateOne($filter, ['$set' => $validData], $options);
 
-        if (1 !== $result->getModifiedCount() && 1 !== $result->getUpsertedCount() && 1 !== $result->getMatchedCount()) {
-            throw new \Exception('Couldn\'t save document.');
+            if (1 !== $result->getModifiedCount() && 1 !== $result->getUpsertedCount() && 1 !== $result->getMatchedCount()) {
+                throw new \Exception('Couldn\'t save document.');
+            }
+
+            if (1 === $result->getUpsertedCount()) {
+                $validData['_id'] = $result->getUpsertedId();
+            }
         }
 
-        if (1 === $result->getUpsertedCount()) {
-            $validData['_id'] = $result->getUpsertedId();
-        }
+        $newDocument = $this->create($validData);
+        $this->eventDispatcher->dispatch(
+            $newDocument,
+            $this->getEventPrefix() . '_save_one_after'
+        );
 
-        return $this->create($validData);
+        return $newDocument;
     }
 
     /**
@@ -165,11 +196,21 @@ class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepos
      */
     public function insertOne(ArrayableInterface $document): BaseDocumentInterface
     {
+        $this->eventDispatcher->dispatch(
+            $document,
+            $this->getEventPrefix() . '_insert_one_before'
+        );
         $validData = $this->getValidDocumentData($document);
         $result = $this->getCollection()->insertOne($validData);
         $validData['_id'] = $result->getInsertedId();
 
-        return $this->create($validData);
+        $newDocument = $this->create($validData);
+        $this->eventDispatcher->dispatch(
+            $newDocument,
+            $this->getEventPrefix() . '_insert_one_after'
+        );
+
+        return $newDocument;
     }
 
     /**
@@ -182,6 +223,10 @@ class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepos
         array $otherFilter = [],
         array $otherOptions = []
     ): BaseDocumentInterface {
+        $this->eventDispatcher->dispatch(
+            $document,
+            $this->getEventPrefix() . '_update_one_before'
+        );
         $validData = $this->getValidDocumentData($document);
         $filter = $this->getDocumentFilter($document, $validData, $otherFilter);
         $result = $this->getCollection()->updateOne($filter, ['$set' => $validData], $otherOptions);
@@ -190,7 +235,13 @@ class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepos
             throw new \Exception('Couldn\'t find document to update.');
         }
 
-        return $this->create($validData);
+        $newDocument = $this->create($validData);
+        $this->eventDispatcher->dispatch(
+            $newDocument,
+            $this->getEventPrefix() . '_update_one_after'
+        );
+
+        return $newDocument;
     }
 
     /**
@@ -203,6 +254,10 @@ class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepos
         array $otherFilter = [],
         array $otherOptions = []
     ): BaseDocumentInterface {
+        $this->eventDispatcher->dispatch(
+            $document,
+            $this->getEventPrefix() . '_replace_one_before'
+        );
         $validData = $this->getValidDocumentData($document);
         $filter = $this->getDocumentFilter($document, $validData, $otherFilter);
         $result = $this->getCollection()->replaceOne($filter, $validData, $otherOptions);
@@ -211,7 +266,13 @@ class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepos
             throw new \Exception('Couldn\'t find document to replace.');
         }
 
-        return $this->create($validData);
+        $newDocument = $this->create($validData);
+        $this->eventDispatcher->dispatch(
+            $newDocument,
+            $this->getEventPrefix() . '_replace_one_after'
+        );
+
+        return $newDocument;
     }
 
     /**
@@ -220,7 +281,13 @@ class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepos
      */
     protected function getValidDocumentData(ArrayableInterface $document, array $otherFilter = []): array
     {
+        $this->eventDispatcher->dispatch(
+            $document,
+            $this->getEventPrefix() . '_validate_document_before'
+        );
+
         $documentData = $document->toArray();
+
         $this->validatePrimaryKey($documentData, $otherFilter);
 
         if ($document instanceof CreatedUpdatedHelperTraitInterface) {
@@ -240,7 +307,13 @@ class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepos
             unset($documentData['_id']);
         }
 
-        return $documentData;
+        $newDocument = $this->create($documentData);
+        $this->eventDispatcher->dispatch(
+            $newDocument,
+            $this->getEventPrefix() . '_validate_document_after'
+        );
+
+        return $newDocument->toArray();
     }
 
     /**
@@ -269,11 +342,13 @@ class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepos
             $keyFilters = [];
             foreach ($this->getPrimaryKey() as $key) {
                 if (!isset($filter[$key])) {
-                    if ('_id' === $key && isset($documentData[$key])) {
-                        if (is_string($documentData[$key])) {
-                            $keyFilters[$key] = new \MongoDB\BSON\ObjectId($documentData[$key]);
-                        } else if ($documentData[$key] instanceof \MongoDB\BSON\ObjectId) {
-                            $keyFilters[$key] = $documentData[$key];
+                    if ('_id' === $key) {
+                        if (isset($documentData[$key]) && !empty($documentData[$key])) {
+                            if (is_string($documentData[$key])) {
+                                $keyFilters[$key] = new \MongoDB\BSON\ObjectId($documentData[$key]);
+                            } else if ($documentData[$key] instanceof \MongoDB\BSON\ObjectId) {
+                                $keyFilters[$key] = $documentData[$key];
+                            }
                         }
                     } else if (isset($validData[$key])) {
                         $keyFilters[$key] = $validData[$key];
@@ -284,11 +359,13 @@ class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepos
                 $filter = array_merge($filter, $keyFilters);
             }
         } elseif (!isset($filter[$this->getPrimaryKey()])) {
-            if ('_id' === $this->getPrimaryKey() && isset($documentData[$this->getPrimaryKey()])) {
-                if (is_string($documentData[$this->getPrimaryKey()])) {
-                    $filter[$this->getPrimaryKey()] = new \MongoDB\BSON\ObjectId($documentData[$this->getPrimaryKey()]);
-                } else if ($documentData[$this->getPrimaryKey()] instanceof \MongoDB\BSON\ObjectId) {
-                    $filter[$this->getPrimaryKey()] = $documentData[$this->getPrimaryKey()];
+            if ('_id' === $this->getPrimaryKey()) {
+                if (isset($documentData[$this->getPrimaryKey()]) && !empty($documentData[$this->getPrimaryKey()])) {
+                    if (is_string($documentData[$this->getPrimaryKey()])) {
+                        $filter[$this->getPrimaryKey()] = new \MongoDB\BSON\ObjectId($documentData[$this->getPrimaryKey()]);
+                    } else if ($documentData[$this->getPrimaryKey()] instanceof \MongoDB\BSON\ObjectId) {
+                        $filter[$this->getPrimaryKey()] = $documentData[$this->getPrimaryKey()];
+                    }
                 }
             } else if (isset($validData[$this->getPrimaryKey()])) {
                 $filter[$this->getPrimaryKey()] = $validData[$this->getPrimaryKey()];
@@ -334,9 +411,35 @@ class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepos
         if ($uuid instanceof \MongoDB\BSON\ObjectId) {
             $filter = ['_id' => $uuid];
         } else {
-            $filter = ['_id' => new \MongoDB\BSON\ObjectId($uuid)];
+            try {
+                $filter = ['_id' => new \MongoDB\BSON\ObjectId($uuid)];
+            } catch (\Exception $e) {
+                throw new \Exception('Invalid ID: ' . $uuid);
+            }
         }
 
         return $this->findOne($filter);
+    }
+
+    public function bulkUpdateByIds(
+        array $ids = [],
+        array $updateData = [],
+        array $options = []
+    ): UpdateResult {
+        $updateIds = [];
+        foreach ($ids as $id) {
+            if ($id instanceof \MongoDB\BSON\ObjectId) {
+                $updateIds[] = $id;
+            } else if (is_string($id)) {
+                $updateIds[] = new \MongoDB\BSON\ObjectId($id);
+            }
+        }
+        $filter = ['_id' => ['$in' => $updateIds]];
+
+        $result = $this->getCollection()->updateMany($filter, [
+            '$set' => $updateData,
+        ], $options);
+
+        return $result;
     }
 }

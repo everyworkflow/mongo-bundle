@@ -13,6 +13,7 @@ use EveryWorkflow\CoreBundle\Support\ArrayableInterface;
 use EveryWorkflow\MongoBundle\Document\BaseDocumentInterface;
 use EveryWorkflow\MongoBundle\Exception\PrimaryKeyMissingException;
 use EveryWorkflow\MongoBundle\Support\Attribute\RepositoryAttribute;
+use MongoDB\UpdateResult;
 
 interface BaseDocumentRepositoryInterface extends BaseRepositoryInterface
 {
@@ -27,6 +28,8 @@ interface BaseDocumentRepositoryInterface extends BaseRepositoryInterface
     public function getDocumentClass(): ?string;
     
     public function create(array $data = []): BaseDocumentInterface;
+
+    public function deleteOneByFilter(array $filter = []): object|array|null;
 
     public function deleteByFilter(array $filter = []): object|array|null;
 
@@ -85,4 +88,10 @@ interface BaseDocumentRepositoryInterface extends BaseRepositoryInterface
      * @throws \Exception
      */
     public function findById(string | \MongoDB\BSON\ObjectId $uuid): BaseDocumentInterface;
+
+    public function bulkUpdateByIds(
+        array $ids = [],
+        array $updateData = [],
+        array $options = []
+    ): UpdateResult;
 }
