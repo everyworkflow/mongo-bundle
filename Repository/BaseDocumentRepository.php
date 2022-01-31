@@ -384,7 +384,7 @@ class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepos
         $mongoData = $this->getCollection()->find($filter, $options);
         /** @var BSONDocument $mongoItem */
         foreach ($mongoData as $mongoItem) {
-            $items[] = $this->create($mongoItem->getArrayCopy());
+            $items[] = $this->create(json_decode(json_encode($mongoItem), true));
         }
 
         return $items;
@@ -400,7 +400,7 @@ class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepos
             throw new \Exception('Document not found under ' . $this->getCollectionName());
         }
 
-        return $this->create($mongoItem->getArrayCopy());
+        return $this->create(json_decode(json_encode($mongoItem), true));
     }
 
     /**

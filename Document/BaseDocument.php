@@ -32,6 +32,8 @@ class BaseDocument implements BaseDocumentInterface
         $uuid = $this->dataObject->getData(self::KEY_ID);
         if (is_string($uuid)) {
             return $uuid;
+        } else if (is_array($uuid) && isset($uuid['$oid'])) {
+            return $uuid['$oid'];
         }
         if ($uuid instanceof \MongoDB\BSON\ObjectId) {
             return (string)$uuid;
