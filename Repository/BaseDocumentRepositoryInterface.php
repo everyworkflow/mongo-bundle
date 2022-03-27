@@ -17,15 +17,15 @@ use MongoDB\UpdateResult;
 
 interface BaseDocumentRepositoryInterface extends BaseRepositoryInterface
 {
+    public function setRepositoryAttribute(RepositoryAttribute $repositoryAttribute): self;
+
     public function getRepositoryAttribute(): ?RepositoryAttribute;
-
-    public function getPrimaryKey(): string|array;
-
-    public function getIndexKeys(): array;
 
     public function setDocumentClass(string $documentClass): self;
 
     public function getDocumentClass(): ?string;
+
+    public function getEventPrefix(): string;
     
     public function create(array $data = []): BaseDocumentInterface;
 

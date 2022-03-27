@@ -13,6 +13,7 @@ use EveryWorkflow\CoreBundle\Factory\ValidatorFactoryInterface;
 use EveryWorkflow\CoreBundle\Helper\CoreHelperInterface;
 use EveryWorkflow\CoreBundle\Model\SystemDateTimeInterface;
 use EveryWorkflow\CoreBundle\Support\ArrayableInterface;
+use EveryWorkflow\MongoBundle\Document\BaseDocument;
 use EveryWorkflow\MongoBundle\Document\BaseDocumentInterface;
 use EveryWorkflow\MongoBundle\Document\HelperTrait\CreatedUpdatedHelperTraitInterface;
 use EveryWorkflow\MongoBundle\Exception\PrimaryKeyMissingException;
@@ -24,39 +25,36 @@ use MongoDB\UpdateResult;
 use ReflectionClass;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
-/**
- * BaseDocumentRepository constructor.
- */
 class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepositoryInterface
 {
-    protected array $indexKeys = [];
-    protected string $eventPrefix = '';
-    protected ?string $documentClass = null;
     protected ?RepositoryAttribute $repositoryAttribute = null;
 
-    protected DocumentFactoryInterface $documentFactory;
-    protected CoreHelperInterface $coreHelper;
-    protected SystemDateTimeInterface $systemDateTime;
-    protected ValidatorFactoryInterface $validatorFactory;
-    protected EventDispatcherInterface $eventDispatcher;
-
     /**
-     * BaseDocumentRepository constructor.
+     * @var array $indexKeys - Collection index keys.
+     * @var string $eventPrefix - Prefix for events triggered by repository.
+     * @var array $documentClass - Repostiory document classname.
      */
     public function __construct(
-        MongoConnectionInterface $mongoConnection,
-        DocumentFactoryInterface $documentFactory,
-        CoreHelperInterface $coreHelper,
-        SystemDateTimeInterface $systemDateTime,
-        ValidatorFactoryInterface $validatorFactory,
-        EventDispatcherInterface $eventDispatcher
+        protected DocumentFactoryInterface $documentFactory,
+        protected CoreHelperInterface $coreHelper,
+        protected SystemDateTimeInterface $systemDateTime,
+        protected ValidatorFactoryInterface $validatorFactory,
+        protected EventDispatcherInterface $eventDispatcher,
+        protected MongoConnectionInterface $mongoConnection,
+        protected string $collectionName = '',
+        protected string|array $primaryKey = '',
+        protected array $indexKeys = [],
+        protected string $eventPrefix = '',
+        protected ?string $documentClass = null
     ) {
-        parent::__construct($mongoConnection);
-        $this->documentFactory = $documentFactory;
-        $this->coreHelper = $coreHelper;
-        $this->systemDateTime = $systemDateTime;
-        $this->validatorFactory = $validatorFactory;
-        $this->eventDispatcher = $eventDispatcher;
+        parent::__construct($mongoConnection, $collectionName, $primaryKey);
+    }
+
+    public function setRepositoryAttribute(RepositoryAttribute $repositoryAttribute): self
+    {
+        $this->repositoryAttribute = $repositoryAttribute;
+
+        return $this;
     }
 
     public function getRepositoryAttribute(): ?RepositoryAttribute
@@ -100,6 +98,13 @@ class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepos
         return $this->indexKeys;
     }
 
+    public function setEventPrefix(string $eventPrefix): self
+    {
+        $this->eventPrefix = $eventPrefix;
+
+        return $this;
+    }
+
     public function getEventPrefix(): string
     {
         if (empty($this->eventPrefix) && $this->getRepositoryAttribute()) {
@@ -125,10 +130,14 @@ class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepos
         return $this;
     }
 
-    public function getDocumentClass(): ?string
+    public function getDocumentClass(): string
     {
-        if (!$this->documentClass && $this->getRepositoryAttribute()) {
-            $this->documentClass = $this->getRepositoryAttribute()->getDocumentClass();
+        if (!$this->documentClass) {
+            if ($this->getRepositoryAttribute()) {
+                $this->documentClass = $this->getRepositoryAttribute()->getDocumentClass();
+            } else {
+                $this->documentClass = BaseDocument::class;
+            }
         }
 
         return $this->documentClass;

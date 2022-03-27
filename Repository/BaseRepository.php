@@ -14,25 +14,26 @@ use MongoDB\Collection;
 class BaseRepository implements BaseRepositoryInterface
 {
     /**
-     * Collection name must be defined.
+     * @var string $collectionName - Name of mongodb repository collection.
+     * @var string|array $primaryKey - Primary keys must be defined.
      */
-    protected string $collectionName = '';
-
-    /**
-     * Primary keys must be defined.
-     */
-    protected string|array $primaryKey = '';
-
-    protected MongoConnectionInterface $mongoConnection;
-
-    public function __construct(MongoConnectionInterface $mongoConnection)
-    {
-        $this->mongoConnection = $mongoConnection;
+    public function __construct(
+        protected MongoConnectionInterface $mongoConnection,
+        protected string $collectionName = '',
+        protected string|array $primaryKey = ''
+    ) {
     }
 
     public function getConnection(): MongoConnectionInterface
     {
         return $this->mongoConnection;
+    }
+
+    public function setConnection(MongoConnectionInterface $mongoConnection): self
+    {
+        $this->mongoConnection = $mongoConnection;
+
+        return $this;
     }
 
     public function getCollection(): Collection

@@ -15,6 +15,8 @@ interface BaseRepositoryInterface
 {
     public function getConnection(): MongoConnectionInterface;
 
+    public function setConnection(MongoConnectionInterface $mongoConnection): self;
+
     public function getCollection(): Collection;
 
     public function getPrimaryKey(): string|array;
