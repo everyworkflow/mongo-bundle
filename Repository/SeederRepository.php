@@ -17,9 +17,9 @@ class SeederRepository extends BaseRepository implements SeederRepositoryInterfa
 {
     public function __construct(
         protected DataObjectFactoryInterface $dataObjectFactory,
-        protected MongoConnectionInterface $mongoConnection,
-        protected string $collectionName = 'seeder_collection',
-        protected string|array $primaryKey = ''
+        MongoConnectionInterface $mongoConnection,
+        string $collectionName = 'seeder_collection',
+        string|array $primaryKey = ''
     ) {
         parent::__construct($mongoConnection, $collectionName, $primaryKey);
         $this->dataObjectFactory = $dataObjectFactory;

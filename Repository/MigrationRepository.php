@@ -17,9 +17,9 @@ class MigrationRepository extends BaseRepository implements MigrationRepositoryI
 {
     public function __construct(
         protected DataObjectFactoryInterface $dataObjectFactory,
-        protected MongoConnectionInterface $mongoConnection,
-        protected string $collectionName = 'migration_collection',
-        protected string|array $primaryKey = ''
+        MongoConnectionInterface $mongoConnection,
+        string $collectionName = 'migration_collection',
+        string|array $primaryKey = ''
     ) {
         parent::__construct($mongoConnection, $collectionName, $primaryKey);
         $this->dataObjectFactory = $dataObjectFactory;

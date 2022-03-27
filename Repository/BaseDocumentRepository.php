@@ -40,9 +40,9 @@ class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepos
         protected SystemDateTimeInterface $systemDateTime,
         protected ValidatorFactoryInterface $validatorFactory,
         protected EventDispatcherInterface $eventDispatcher,
-        protected MongoConnectionInterface $mongoConnection,
-        protected string $collectionName = '',
-        protected string|array $primaryKey = '',
+        MongoConnectionInterface $mongoConnection,
+        string $collectionName = '',
+        string|array $primaryKey = '',
         protected array $indexKeys = [],
         protected string $eventPrefix = '',
         protected ?string $documentClass = null
