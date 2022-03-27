@@ -15,15 +15,13 @@ use EveryWorkflow\MongoBundle\Model\MongoConnectionInterface;
 
 class MigrationRepository extends BaseRepository implements MigrationRepositoryInterface
 {
-    protected string $collectionName = 'migration_collection';
-
-    protected DataObjectFactoryInterface $dataObjectFactory;
-
     public function __construct(
-        DataObjectFactoryInterface $dataObjectFactory,
-        MongoConnectionInterface $mongoConnection
+        protected DataObjectFactoryInterface $dataObjectFactory,
+        protected MongoConnectionInterface $mongoConnection,
+        protected string $collectionName = 'migration_collection',
+        protected string|array $primaryKey = ''
     ) {
-        parent::__construct($mongoConnection);
+        parent::__construct($mongoConnection, $collectionName, $primaryKey);
         $this->dataObjectFactory = $dataObjectFactory;
     }
 
