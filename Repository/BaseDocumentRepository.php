@@ -176,7 +176,7 @@ class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepos
         $filter = $this->getDocumentFilter($document, $validData, $otherFilter);
         if (empty($filter)) {
             $result = $this->getCollection()->insertOne($validData);
-            $validData['_id'] = $result->getInsertedId();
+            $validData = ['_id' => $result->getInsertedId()] + $validData;
         } else {
             $options = array_merge(['upsert' => true], $otherOptions);
             $result = $this->getCollection()->updateOne($filter, ['$set' => $validData], $options);
@@ -185,8 +185,10 @@ class BaseDocumentRepository extends BaseRepository implements BaseDocumentRepos
                 throw new \Exception('Couldn\'t save document.');
             }
 
-            if (1 === $result->getUpsertedCount()) {
-                $validData['_id'] = $result->getUpsertedId();
+            if (1 === $result->getModifiedCount() && isset($document->toArray()['_id'])) {
+                $validData = ['_id' => $document->toArray()['_id']] + $validData;
+            } else if (1 === $result->getUpsertedCount()) {
+                $validData = ['_id' => $result->getUpsertedId()] + $validData;
             }
         }
 
