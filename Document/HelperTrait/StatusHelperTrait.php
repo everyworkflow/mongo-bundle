@@ -18,8 +18,8 @@ trait StatusHelperTrait
         return $this;
     }
 
-    public function getStatus(): bool
+    public function getStatus(): string
     {
-        return (bool) $this->dataObject->getData(StatusHelperTraitInterface::KEY_STATUS);
+        return $this->dataObject->getData(StatusHelperTraitInterface::KEY_STATUS) ?? 'disable';
     }
 }

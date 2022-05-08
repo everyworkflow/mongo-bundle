@@ -17,5 +17,5 @@ interface StatusHelperTraitInterface
 
     public function setStatus(string $status): self;
 
-    public function getStatus(): bool;
+    public function getStatus(): string;
 }
