@@ -77,4 +77,13 @@ class BaseDocument implements BaseDocumentInterface
 
         return $this->dataObject->toArray();
     }
+
+    /**
+     * @param string $key
+     * @return self
+     */
+    public function unsetData(string $key): self
+    {
+        return $this->dataObject->unsetData($key);
+    }
 }

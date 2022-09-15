@@ -19,4 +19,10 @@ interface BaseDocumentInterface extends ArrayableInterface
     public function setData($field, $value = null): self;
 
     public function getData($field = null);
+
+    /**
+     * @param string $key
+     * @return self
+     */
+    public function unsetData(string $key): self;
 }
