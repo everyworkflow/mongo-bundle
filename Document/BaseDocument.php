@@ -84,6 +84,7 @@ class BaseDocument implements BaseDocumentInterface
      */
     public function unsetData(string $key): self
     {
-        return $this->dataObject->unsetData($key);
+        $this->dataObject->unsetData($key);
+        return $this;
     }
 }
